@@ -1,0 +1,7 @@
+# Informations machine à compléter
+# Exemple :
+# OS:
+# CPU:
+# RAM:
+# Compilateur:
+# Date:
