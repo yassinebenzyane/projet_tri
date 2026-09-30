@@ -5,18 +5,24 @@ SRC_DIR = src
 TEST_DIR = tests
 BUILD_DIR = build
 
-all: $(BUILD_DIR)/test_sort
+all: $(BUILD_DIR)/test_correctness $(BUILD_DIR)/benchmark
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-$(BUILD_DIR)/test_sort: $(BUILD_DIR) $(SRC_DIR)/sort.c $(TEST_DIR)/test_sort.c
-	$(CC) $(CFLAGS) -o $@ $(SRC_DIR)/sort.c $(TEST_DIR)/test_sort.c
+$(BUILD_DIR)/test_correctness: $(BUILD_DIR) $(SRC_DIR)/sort.c $(SRC_DIR)/generators.c $(TEST_DIR)/test_correctness.c
+	$(CC) $(CFLAGS) -o $@ $(SRC_DIR)/sort.c $(SRC_DIR)/generators.c $(TEST_DIR)/test_correctness.c
 
-run: $(BUILD_DIR)/test_sort
-	./$(BUILD_DIR)/test_sort
+$(BUILD_DIR)/benchmark: $(BUILD_DIR) $(SRC_DIR)/sort.c $(SRC_DIR)/generators.c $(TEST_DIR)/benchmark.c
+	$(CC) $(CFLAGS) -o $@ $(SRC_DIR)/sort.c $(SRC_DIR)/generators.c $(TEST_DIR)/benchmark.c
+
+check: $(BUILD_DIR)/test_correctness
+	./$(BUILD_DIR)/test_correctness
+
+bench: $(BUILD_DIR)/benchmark
+	./$(BUILD_DIR)/benchmark
 
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: all run clean
+.PHONY: all check bench clean
