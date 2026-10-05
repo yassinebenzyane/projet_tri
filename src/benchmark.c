@@ -29,24 +29,52 @@ typedef void (*sort_function)(
     sort_stats_t *
 );
 
-int is_sorted(int *array, size_t n)
+/* Copie triee (par qsort) des donnees courantes : sert de reference
+   pour verifier que chaque tri produit le bon resultat. */
+int *reference;
+
+int nb_erreurs = 0;
+
+int compare_int(const void *a, const void *b)
 {
-    size_t i;
+    int x = *(const int *)a;
+    int y = *(const int *)b;
 
-    for (i = 1; i < n; i++)
-    {
-        if (array[i - 1] > array[i])
-        {
-            return 0;
-        }
-    }
-
-    return 1;
+    return (x > y) - (x < y);
 }
 
+void prepare_reference(int *original, size_t n)
+{
+    memcpy(
+        reference,
+        original,
+        n * sizeof(int)
+    );
+
+    qsort(
+        reference,
+        n,
+        sizeof(int),
+        compare_int
+    );
+}
+
+/* Trie ET permutation des donnees d'origine : le tableau doit etre
+   identique a la reference. */
+int is_correctly_sorted(int *array, size_t n)
+{
+    return memcmp(array, reference, n * sizeof(int)) == 0;
+}
+
+/* timespec_get (C11) : resolution bien meilleure que clock(),
+   qui n'avance que par pas de 1 ms sous Windows. */
 double get_time_ms(void)
 {
-    return (double)clock() * 1000.0 / CLOCKS_PER_SEC;
+    struct timespec ts;
+
+    timespec_get(&ts, TIME_UTC);
+
+    return (double)ts.tv_sec * 1000.0 + (double)ts.tv_nsec / 1000000.0;
 }
 
 double calculer_moyenne(double temps[])
@@ -78,7 +106,9 @@ double calculer_ecart_type(
         somme = somme + difference * difference;
     }
 
-    return sqrt(somme / NB_REPETITIONS);
+    /* Ecart-type d'echantillon (n - 1) : les repetitions sont un
+       echantillon des temps possibles. */
+    return sqrt(somme / (NB_REPETITIONS - 1));
 }
 
 void test_algorithm(
@@ -135,12 +165,16 @@ void test_algorithm(
 
         temps[repetition - 1] = time_ms;
 
-        if (!is_sorted(array, n))
+        if (!is_correctly_sorted(array, n))
         {
             printf(
-                "ERREUR : %s n'a pas correctement trie le tableau.\n",
-                algorithm_name
+                "ERREUR : %s n'a pas correctement trie le tableau (%s, n=%zu).\n",
+                algorithm_name,
+                data_name,
+                n
             );
+
+            nb_erreurs++;
 
             return;
         }
@@ -235,12 +269,12 @@ int main(void)
 
     fprintf(
         file,
-        "algorithm,type_donnees,n,repetition,temps_ms,comparaisons,echanges\n"
+        "algorithme,type_donnees,n,repetition,temps_ms,comparaisons,echanges\n"
     );
 
     fprintf(
         stats_file,
-        "algorithm,type_donnees,n,moyenne_ms,ecart_type_ms\n"
+        "algorithme,type_donnees,n,moyenne_ms,ecart_type_ms\n"
     );
 
     printf("\n");
@@ -265,7 +299,11 @@ int main(void)
             n * sizeof(int)
         );
 
-        if (original == NULL || array == NULL)
+        reference = malloc(
+            n * sizeof(int)
+        );
+
+        if (original == NULL || array == NULL || reference == NULL)
         {
             printf(
                 "Erreur : memoire insuffisante pour n = %zu\n",
@@ -274,6 +312,7 @@ int main(void)
 
             free(original);
             free(array);
+            free(reference);
 
             fclose(file);
             fclose(stats_file);
@@ -289,6 +328,8 @@ int main(void)
             123456789ULL
         );
 
+        prepare_reference(original, n);
+
         test_algorithm(
             "Bubble",
             bubble_sort,
@@ -352,7 +393,7 @@ int main(void)
         test_algorithm(
             "Quick",
             quick_sort,
-            MAX_SIZE_SLOW,
+            MAX_SIZE_FAST,
             "random",
             original,
             array,
@@ -368,6 +409,8 @@ int main(void)
             n
         );
 
+        prepare_reference(original, n);
+
         test_algorithm(
             "Bubble",
             bubble_sort,
@@ -431,7 +474,7 @@ int main(void)
         test_algorithm(
             "Quick",
             quick_sort,
-            MAX_SIZE_SLOW,
+            MAX_SIZE_FAST,
             "sorted",
             original,
             array,
@@ -447,6 +490,8 @@ int main(void)
             n
         );
 
+        prepare_reference(original, n);
+
         test_algorithm(
             "Bubble",
             bubble_sort,
@@ -510,7 +555,7 @@ int main(void)
         test_algorithm(
             "Quick",
             quick_sort,
-            MAX_SIZE_SLOW,
+            MAX_SIZE_FAST,
             "reverse",
             original,
             array,
@@ -527,6 +572,8 @@ int main(void)
             100
         );
 
+        prepare_reference(original, n);
+
         test_algorithm(
             "Bubble",
             bubble_sort,
@@ -590,7 +637,7 @@ int main(void)
         test_algorithm(
             "Quick",
             quick_sort,
-            MAX_SIZE_SLOW,
+            MAX_SIZE_FAST,
             "duplicates",
             original,
             array,
@@ -601,10 +648,21 @@ int main(void)
 
         free(original);
         free(array);
+        free(reference);
     }
 
     fclose(file);
     fclose(stats_file);
+
+    if (nb_erreurs > 0)
+    {
+        printf(
+            "\nATTENTION : %d cas incorrect(s), les resultats ne sont pas valides.\n",
+            nb_erreurs
+        );
+
+        return 1;
+    }
 
     printf("\n");
     printf("========================================\n");
