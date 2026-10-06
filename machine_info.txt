@@ -1,7 +1,7 @@
-# Informations machine à compléter
-# Exemple :
-# OS:
-# CPU:
-# RAM:
-# Compilateur:
-# Date:
+# Informations sur la machine utilisée pour le benchmark
+OS: Microsoft Windows 11 Famille 64 bits (10.0.26200)
+CPU: AMD Ryzen 7 5800HS with Radeon Graphics (8 coeurs / 16 threads, 3.2 GHz)
+RAM: 16 Go (15.4 Go utilisables)
+Compilateur: gcc 13.2.0 (MinGW-W64 x86_64-ucrt-posix-seh)
+Options: -Wall -Wextra -Werror -std=c11 -O2 -D__USE_MINGW_ANSI_STDIO=1
+Date: 2026-10-06
