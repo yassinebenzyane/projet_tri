@@ -8,10 +8,8 @@ extern "C" {
 #endif
 
 typedef struct {
-
     size_t comparisons;
     size_t exchanges;
-
 } sort_stats_t;
 
 void reset_stats(sort_stats_t *stats);

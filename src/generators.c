@@ -52,5 +52,3 @@ void generate_duplicates(int *array, size_t size, int max_value) {
         array[i] = (int)(i % (max_value > 0 ? max_value : 1));
     }
 }
-
-
